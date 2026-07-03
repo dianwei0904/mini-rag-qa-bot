@@ -44,3 +44,14 @@ def test_retrieve_unknown_product_should_return_empty():
     results = retrieve_relevant_docs("Does Product Z support Android?", documents)
 
     assert results == []
+
+
+def test_retrieve_product_a_macos_should_not_return_windows_or_ios_docs():
+    content = load_knowledge_base(FAQ_PATH)
+    documents = split_documents(content)
+
+    results = retrieve_relevant_docs("Does Product A support macOS?", documents)
+
+    assert any("Product A - macOS Driver Requirement" in doc for doc in results)
+    assert not any("Product A - Windows Support" in doc for doc in results)
+    assert not any("Product A - iOS Support" in doc for doc in results)

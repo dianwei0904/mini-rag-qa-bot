@@ -41,10 +41,8 @@ def extract_product_name(text: str) -> str | None:
     return f"product {match.group(1)}"
 
 
-def retrieve_relevant_docs(query: str, documents: list[str]) -> list[str]:
-    query_tokens = tokenize(query)
-    query_product = extract_product_name(query)
-    matched_docs = []
+def extract_target_keywords(text: str) -> set[str]:
+    tokens = tokenize(text)
 
     ignored_keywords = {
         "does",
@@ -54,11 +52,26 @@ def retrieve_relevant_docs(query: str, documents: list[str]) -> list[str]:
         "the",
         "a",
         "an",
+        "product",
         "support",
         "supports",
     }
 
-    meaningful_keywords = query_tokens - ignored_keywords
+    product_match = re.search(r"product\s+([a-zA-Z0-9]+)", text.lower())
+    product_code = product_match.group(1) if product_match else None
+
+    target_keywords = tokens - ignored_keywords
+
+    if product_code:
+        target_keywords.discard(product_code)
+
+    return target_keywords
+
+
+def retrieve_relevant_docs(query: str, documents: list[str]) -> list[str]:
+    query_product = extract_product_name(query)
+    target_keywords = extract_target_keywords(query)
+    matched_docs = []
 
     for doc in documents:
         doc_lower = doc.lower()
@@ -67,7 +80,7 @@ def retrieve_relevant_docs(query: str, documents: list[str]) -> list[str]:
         if query_product and query_product not in doc_lower:
             continue
 
-        if meaningful_keywords & doc_tokens:
+        if target_keywords and target_keywords & doc_tokens:
             matched_docs.append(doc)
 
     return matched_docs
